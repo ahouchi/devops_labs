@@ -61,8 +61,8 @@ resource "aws_security_group" "MyLab_Sec_Group" {
             from_port = port.value
             to_port = port.value
             protocol = "tcp"
-            cidr_blocks = ["65.94.232.139/32"]
-            #cidr_blocks = ["0.0.0.0/0"]
+            #cidr_blocks = ["65.94.232.139/32"]
+            cidr_blocks = ["0.0.0.0/0"]
        }
 
   }
@@ -104,15 +104,82 @@ resource "aws_route_table_association" "MyLab_Assn" {
 
 # Create an AWS EC2 Instance
 
-resource "aws_instance" "DemoResource" {
+resource "aws_instance" "Jenkins" {
+  #count = 1
   ami           = var.ami
   instance_type = var.instance_type
   key_name = "terafmkey"
   vpc_security_group_ids = [aws_security_group.MyLab_Sec_Group.id]
   subnet_id = aws_subnet.MyLab-Subnet1.id
   associate_public_ip_address = true
+  user_data = file("./InstallJenkins.sh")
   
   tags = {
-    Name = "DemoResource"
+    Name = "Jenkins-Server"
+  }
+}
+
+# Create an AWS EC2 Instance to host Ansible Controller (Control node)
+
+resource "aws_instance" "AnsibleController" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  key_name = "terafmkey"
+  vpc_security_group_ids = [aws_security_group.MyLab_Sec_Group.id]
+  subnet_id = aws_subnet.MyLab-Subnet1.id
+  associate_public_ip_address = true
+  user_data = file("./InstallAnsibleCN.sh")
+
+  tags = {
+    Name = "Ansible-ControlNode"
+  }
+}
+
+# Create/Launch an AWS EC2 Instance(Ansible Managed Node1) to host Apache Tomcat server
+
+resource "aws_instance" "AnsibleManagedNode1" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  key_name = "terafmkey"
+  vpc_security_group_ids = [aws_security_group.MyLab_Sec_Group.id]
+  subnet_id = aws_subnet.MyLab-Subnet1.id
+  associate_public_ip_address = true
+  user_data = file("./AnsibleManagedNode.sh")
+
+  tags = {
+    Name = "AnsibleMN-ApacheTomcat"
+  }
+}
+
+# Create/Launch an AWS EC2 Instance(Ansible Managed Node2) to host Docker
+
+resource "aws_instance" "AnsibleMN-DockerHost" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  key_name = "terafmkey"
+  vpc_security_group_ids = [aws_security_group.MyLab_Sec_Group.id]
+  subnet_id = aws_subnet.MyLab-Subnet1.id
+  associate_public_ip_address = true
+  user_data = file("./Docker.sh")
+
+  tags = {
+    Name = "AnsibleMN-DockerHost"
+  }
+}
+
+
+# Create/Launch an AWS EC2 Instance to host Sonatype Nexus
+
+resource "aws_instance" "Nexus" {
+  ami           = var.ami
+  instance_type = var.instance_type
+  key_name = "terafmkey"
+  vpc_security_group_ids = [aws_security_group.MyLab_Sec_Group.id]
+  subnet_id = aws_subnet.MyLab-Subnet1.id
+  associate_public_ip_address = true
+  user_data = file("./InstallNexus.sh")
+
+  tags = {
+    Name = "Nexus-Server"
   }
 }
